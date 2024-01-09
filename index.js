@@ -4,7 +4,12 @@ const { MongoClient } = require('mongodb');
 const cors = require("cors");
 const ObjectId = require("mongodb").ObjectId;
 require('dotenv').config();
+// const twilio = require('twilio'); 
 
+//twilio requirements -- Texting API 
+// const accountSid = 'ACf4014a2148a64c2eef660da93718974a';
+// const authToken = 'db7bb8253f5533d197cc317e3189adaf'; 
+// const client2 = new twilio(accountSid, authToken);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -50,6 +55,12 @@ async function run() {
         const bookedOffers = await bookingCollection.find(query).toArray();
         res.json(bookedOffers)
     })
+    app.get("/bookings/singleBooking/:id", async (req, res) => {
+        const id = req.params.id
+        const query={_id:new ObjectId(id)}
+        const bookedOffer = await bookingCollection.findOne(query)
+        res.json(bookedOffer)
+    })
     // get a particular booked offer using id
     app.put("/bookings/:id", async (req, res) => {
 
@@ -64,6 +75,15 @@ async function run() {
         res.json(result);
 
     })
+    app.put("/bookings/paymentStatus/:id", async (req, res) => {
+        const id = req.params.id;
+
+        const query = { _id: new ObjectId (id) };
+        const updateDoc = { $set: { paymentStatus: "paid" } };
+        const options = { upsert: true };
+        const updatedStatus = await bookingCollection.updateOne(query, updateDoc, options);
+        res.json(updatedStatus);
+    })
     // deleting a offer from my bookings
     app.delete("/bookings/:id", async (req, res) => {
         const query = { _id: new ObjectId(req.params.id) };
@@ -74,7 +94,7 @@ async function run() {
     // book a offer using crud post
 
     app.post("/bookings", async (req, res) => {
-        console.log(req.body);
+        
         const cursor = await bookingCollection.insertOne(req.body);
         res.json(cursor);
     })
@@ -89,8 +109,30 @@ async function run() {
         const user = await userCollection.insertOne(req.body);
         res.json(user)
     })
+    
+
 }
 run().catch(console.dir);
+//twillo things
+// try {
+//     app.get('/send-text', (req, res) => {
+//         //Welcome Message
+//         res.send('Hello to the Twilio Server')
+    
+//         //_GET Variables
+//         const { recipient, textmessage } = req.query;
+    
+    
+//         //Send Text
+//         // client2.messages.create({
+//         //     body: textmessage,
+//         //     to: recipient,  // Text this number
+//         //     from: '+17178976085' // From a valid Twilio number
+//         // }).then((message) => console.log(message.body));
+//     }) 
+// } catch (error) {
+//     console.log(error)
+// }
 
 app.get("/", (req, res) => {
     res.send("Server is running")
